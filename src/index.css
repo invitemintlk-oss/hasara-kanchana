@@ -2,12 +2,12 @@
 @import "tailwindcss";
 
 @theme {
-  --font-serif: "Abhaya Libre", serif;
-  --font-script: "Abhaya Libre", cursive;
-  --font-sans: "Abhaya Libre", sans-serif;
-  --font-cinzel: "Abhaya Libre", serif;
+  --font-serif: "Cormorant Garamond", serif;
+  --font-script: "Playball", cursive;
+  --font-sans: "Montserrat", sans-serif;
+  --font-cinzel: "Cinzel", serif;
   --font-montserrat: "Montserrat", sans-serif;
-  --font-playball: "Abhaya Libre", cursive;
+  --font-playball: "Playball", cursive;
   --font-sinhala: "Abhaya Libre";
 
   --color-sage: #87937a;
@@ -32,14 +32,14 @@
 :root {
   background-color: var(--color-paper);
   color: #4D412F;
-  font-family: var(--font-sinhala);
+  font-family: var(--font-montserrat);
 }
 
 body,
 input,
 textarea,
 button {
-  font-family: "Abhaya Libre", Arial, sans-serif !important;
+  font-family: "Montserrat", Arial, sans-serif;
 }
 
 html,
@@ -121,7 +121,7 @@ body {
 
 input::placeholder,
 textarea::placeholder {
-  font-family: "Apex", sans-serif !important;
+  font-family: "Montserrat", sans-serif !important;
 }
 
 .mask-gradient {

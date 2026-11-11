@@ -4,33 +4,33 @@ import { Sparkles, MapPin, Calendar, Clock, ChevronDown } from "lucide-react";
 
 const INVITATION = {
   couple: {
-    bride: "මලීෂා",
-    groom: "කවිඳු",
-    brideFull: "මලීෂා කුමාරප්පෙරුම",
-    groomFull: "කවිඳු ශාවින්ද",
+    bride: "Hasara",
+    groom: "Kanchana",
+    brideFull: "Hasara",
+    groomFull: "Kanchana",
+    brideParents: "Beloved daughter of Mr. & Mrs. Abeysingha",
+    groomParents: "Beloved son of Mr. & Mrs. Garumanna",
   },
   date: {
-    displayNumeric: "23 . 07 . 2026",
-    displayLong: "වර්ෂ 2026 ක් වූ ජූලි මස 23 වන දින",
-    countdownTarget: "2026-07-23T10:10:00+05:30",
+    displayNumeric: "14 . 12 . 2026",
+    displayLong: "Monday, 14th December 2026",
+    countdownTarget: "2026-12-14T11:24:00+05:30",
   },
   time: {
-    ceremonyStart: "පෙ.ව. 10:10",
-    ceremonyEnd: "ප.ව. 3:30",
-    registration: "පෙ.ව. 10:45",
-    welcome: "පෙ.ව. 9:30",
+    ceremonyStart: "11:24 AM",
+    ceremonyEnd: "3:30 PM",
+    registration: "10:45 AM",
+    welcome: "9:30 AM",
   },
   venue: {
-    name: "Grandeeza Hotel",
-    city: "Negombo",
-    mapQuery: "Grandeeza Hotel, Negombo",
-    googleMapsLink: "https://maps.app.goo.gl/oFXbL74vBvHcvBX69",
+    name: "Hotel Green Court",
+    city: "Homagama",
+    mapQuery: "Hotel Green Court, Homagama",
+    googleMapsLink: "https://www.google.com/maps/search/?api=1&query=Hotel+Green+Court+Homagama",
   },
-  rsvpContacts: [
-    "Maleesha - +94 71 969 2123",
-    "Kavindu - +94 76 340 1507",
-  ],
-} as const;
+  // Add phone numbers here, e.g. "Hasara - +94 7X XXX XXXX"
+  rsvpContacts: [] as string[],
+};
 
 const backgroundMusic = "/handawaka-various-artists.mp3";
 const googleScriptUrl =
@@ -145,10 +145,10 @@ function CountdownTimer({ isDark = false }: { isDark?: boolean }) {
   const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
 
   const stats = [
-    { label: "දින", value: days },
-    { label: "පැය", value: hours },
-    { label: "මිනිත්තු", value: minutes },
-    { label: "තත්පර", value: seconds },
+    { label: "Days", value: days },
+    { label: "Hours", value: hours },
+    { label: "Minutes", value: minutes },
+    { label: "Seconds", value: seconds },
   ];
 
   return (
@@ -218,11 +218,11 @@ function Gallery() {
             </span>
             <div className="h-px w-16 bg-[#52b788]/30" />
           </div>
-          <h2 className="text-5xl md:text-8xl bg-gradient-to-r from-[#3f7a39] via-[#2d5a27] to-[#3f7a39] bg-clip-text text-transparent italic leading-none">
-            සුන්දර මතක
+          <h2 className="font-playball text-5xl md:text-8xl bg-gradient-to-r from-[#3f7a39] via-[#2d5a27] to-[#3f7a39] bg-clip-text text-transparent italic leading-none">
+            Beautiful Memories
           </h2>
           <p className="text-[#2d5a27]/70 text-sm md:text-base tracking-[0.3em] font-medium max-w-2xl mx-auto pt-2 leading-loose">
-            අපගේ ආදර කතාවේ සුන්දරතම මොහොතක් ඔබ සමඟ බෙදා ගැනීමට අප සතුටින් බලා සිටිමු.
+            A few of the most beautiful moments of our love story, shared with you.
           </p>
         </motion.div>
 
@@ -261,8 +261,8 @@ function Gallery() {
 }
 
 export default function WeddingInvitation() {
-  const [hasStarted, setHasStarted] = useState(false);
   const [isOpened, setIsOpened] = useState(false);
+  const [showDancers, setShowDancers] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [hasAttemptedAutoplay, setHasAttemptedAutoplay] = useState(false);
 
@@ -358,13 +358,36 @@ export default function WeddingInvitation() {
     }
   }, [isOpened, isPlaying, hasAttemptedAutoplay]);
 
+  const startDancersVideo = () => {
+    setShowDancers(true);
+
+    if (audioRef.current && !isPlaying) {
+      audioRef.current
+        .play()
+        .then(() => setIsPlaying(true))
+        .catch((err) => console.log("Audio play failed:", err));
+    }
+  };
+
+  const openInvitation = () => {
+    setShowDancers(false);
+    setIsOpened(true);
+
+    if (audioRef.current && !isPlaying) {
+      audioRef.current
+        .play()
+        .then(() => setIsPlaying(true))
+        .catch((err) => console.log("Audio play failed:", err));
+    }
+  };
+
   useEffect(() => {
-    if (introVideoRef.current && !hasStarted) {
+    if (introVideoRef.current && !isOpened) {
       introVideoRef.current.play().catch((err) => {
         console.log("Intro video autoplay failed:", err);
       });
     }
-  }, [hasStarted]);
+  }, [isOpened]);
 
   return (
     <main
@@ -374,142 +397,112 @@ export default function WeddingInvitation() {
       <FloatingPetals />
 
       <AnimatePresence mode="wait">
-        {!isOpened ? (
+        {!isOpened && showDancers ? (
           <motion.div
-            key="video-stage"
+            key="dancers-intro"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0, transition: { duration: 1.2 } }}
+            exit={{ opacity: 0, transition: { duration: 1.2, ease: "easeInOut" } }}
             className="fixed inset-0 z-[100] bg-black flex items-center justify-center overflow-hidden"
           >
             <video
-              ref={introVideoRef}
-              muted={true}
+              autoPlay
+              muted
               playsInline
               preload="auto"
-              autoPlay
-              loop={!hasStarted}
-              className={`w-full h-full object-cover transition-all duration-[2000ms] ease-out ${!hasStarted ? "blur-md scale-105 opacity-80" : "blur-0 scale-100 opacity-100"
-                }`}
-              onEnded={() => setIsOpened(true)}
-              onError={(e) => { console.error("Video error:", e); setIsOpened(true); }}
+              onEnded={openInvitation}
+              onError={openInvitation}
+              className="w-full h-full object-cover"
+              src="/dancers_intro.mp4"
+            />
+
+            <motion.button
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1.5, duration: 0.8 }}
+              onClick={openInvitation}
+              className="intro-montserrat absolute bottom-8 right-6 z-[110] px-6 py-2.5 bg-white/30 backdrop-blur-md border border-white/40 text-white text-[10px] uppercase tracking-[0.35em] font-bold rounded-full hover:bg-white/50 transition-all"
             >
-              <source src="/intro_video.mp4" type="video/mp4" />
-            </video>
+              Skip
+            </motion.button>
+          </motion.div>
+        ) : !isOpened ? (
+          <motion.div
+            key="video-intro"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, scale: 1.05, transition: { duration: 1, ease: "easeInOut" } }}
+            className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-white overflow-hidden"
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-rose-50 via-white to-sky-50" />
+            <motion.div
+              animate={{ scale: [1, 1.2, 1], opacity: [0.15, 0.25, 0.15], x: [-20, 20, -20], y: [-20, 20, -20] }}
+              transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+              className="absolute -top-[10%] -left-[10%] w-[60%] aspect-square bg-gradient-to-br from-pink-300/30 to-purple-300/30 blur-[120px] rounded-full"
+            />
+            <motion.div
+              animate={{ scale: [1.2, 1, 1.2], opacity: [0.1, 0.2, 0.1], x: [20, -20, 20], y: [20, -20, 20] }}
+              transition={{ duration: 18, repeat: Infinity, ease: "linear" }}
+              className="absolute -bottom-[15%] -right-[15%] w-[70%] aspect-square bg-gradient-to-tl from-amber-200/40 to-rose-200/40 blur-[140px] rounded-full"
+            />
 
-            {!hasStarted && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center z-[120] bg-black/40 backdrop-blur-[2px]">
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 1, delay: 0.5 }}
-                  className="text-center"
-                >
-                  <motion.div
-                    animate={{ scale: [1, 1.05, 1] }}
-                    transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                    className="mb-12"
-                  >
-                    <h2 className="text-4xl md:text-6xl text-[#2d5a27] mb-2 drop-shadow-[0_2px_10px_rgba(255,255,255,0.8)]">
-                      විවාහ ආරාධනයයි
-                    </h2>
-                    <p className="text-xl md:text-2xl text-[#2d5a27] tracking-[0.3em] drop-shadow-[0_2px_10px_rgba(255,255,255,0.8)]">
-                      {INVITATION.couple.bride} සහ {INVITATION.couple.groom}
-                    </p>
-                  </motion.div>
-
-                  <button
-                    onClick={() => {
-                      setHasStarted(true);
-
-                      if (introVideoRef.current) {
-                        introVideoRef.current.loop = false;
-                        introVideoRef.current.currentTime = 0;
-                        introVideoRef.current.play().catch((err) => console.log(err));
-                      }
-
-                      if (audioRef.current && !isPlaying) {
-                        audioRef.current.play().then(() => setIsPlaying(true)).catch((err) => console.log("Audio play failed:", err));
-                      }
-                    }}
-                    className="group relative px-12 py-5 overflow-hidden rounded-full transition-all duration-500 hover:scale-105 active:scale-95"
-                  >
-                    <div className="absolute inset-0 bg-[#2d5a27] opacity-90 group-hover:opacity-100 transition-opacity" />
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
-                    <span className="relative z-10 font-bold text-white text-sm tracking-[0.35em]">
-                      ආරාධනය විවෘත කරන්න
-                    </span>
-                  </button>
-
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 0.8 }}
-                    transition={{ delay: 1.5 }}
-                    className="mt-8 text-[#2d5a27]/80 text-xs tracking-[0.35em]"
-                  >
-                    ආරම්භ කිරීමට ක්ලික් කරන්න
-                  </motion.div>
-                </motion.div>
+            <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+              <div className="relative w-full h-[35vh] md:h-full">
+                <video
+                  ref={introVideoRef}
+                  autoPlay
+                  muted
+                  playsInline
+                  preload="auto"
+                  onEnded={startDancersVideo}
+                  className="w-full h-full object-cover shadow-[0_25px_60px_-15px_rgba(0,0,0,0.2)]"
+                  src="/Use_the_uploaded_202604161807.mp4"
+                />
+                <div className="absolute inset-0 border-y-2 border-white/40 md:hidden" />
+                <div className="absolute inset-0 bg-gradient-to-b from-white/20 via-transparent to-white/20 md:hidden" />
               </div>
-            )}
+            </div>
 
-            {hasStarted && (
-              <>
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 2, delay: 0.5 }}
-                  className="absolute inset-0 flex flex-col items-center justify-start pt-[30vh] md:pt-32 z-[105] pointer-events-none text-center px-6"
-                >
-                  <motion.h2
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 2, delay: 0.8 }}
-                    className="text-3xl md:text-7xl text-[#2d5a27] mb-8 drop-shadow-[0_2px_10px_rgba(255,255,255,0.8)]"
-                  >
-                    විවාහ ආරාධනයයි!
-                  </motion.h2>
+            <div className="absolute inset-0 bg-gradient-to-b from-rose-50/10 via-transparent to-sky-50/20 pointer-events-none" />
 
-                  <div className="flex flex-col items-center w-full max-w-[280px] mx-auto">
-                    <motion.p
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 2, delay: 1.2 }}
-                      className="text-3xl md:text-6xl text-[#2d5a27] tracking-[0.3em] font-bold drop-shadow-[0_2px_10px_rgba(255,255,255,0.8)] self-start"
-                    >
-                      {INVITATION.couple.bride}
-                    </motion.p>
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1, duration: 1 }}
+              className="relative z-[101] mt-auto mb-20 md:mb-24"
+            >
+              <div className="absolute -inset-4 bg-gradient-to-r from-pink-200 via-amber-100 to-sky-200 blur-2xl opacity-40 animate-pulse" />
+              <motion.button
+                whileHover={{ scale: 1.05, backgroundColor: "rgba(255, 255, 255, 1)" }}
+                whileTap={{ scale: 0.95 }}
+                onClick={startDancersVideo}
+                className="group relative flex flex-col items-center gap-4 bg-white/95 backdrop-blur-md border border-white/60 px-14 py-6 rounded-full text-stone-800 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.12)] transition-all duration-500 hover:shadow-pink-200/30"
+              >
+                <span className="intro-cinzel text-[15px] tracking-[0.6em] uppercase font-bold bg-gradient-to-r from-[#be185d] to-[#831843] bg-clip-text text-transparent">
+                  Open Invitation
+                </span>
+                <div className="w-10 h-[1.5px] bg-gradient-to-r from-pink-200 via-pink-400 to-pink-200 group-hover:w-20 transition-all duration-500" />
+                <span className="intro-montserrat text-[10px] uppercase tracking-[0.4em] font-bold text-stone-400 animate-pulse">
+                  Tap to Reveal
+                </span>
+              </motion.button>
+            </motion.div>
 
-                    <motion.span
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 2, delay: 1.5 }}
-                      className="text-2xl md:text-4xl text-[#2d5a27]/90 italic drop-shadow-[0_2px_10px_rgba(255,255,255,0.8)] my-1"
-                    >
-                      &
-                    </motion.span>
+            <div className="absolute top-12 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
+              <p className="intro-cinzel text-[11px] tracking-[0.8em] font-bold uppercase flex flex-col items-center gap-3">
+                <span className="bg-gradient-to-r from-pink-300 via-pink-500 to-pink-300 bg-clip-text text-transparent opacity-80 whitespace-nowrap">
+                  {INVITATION.couple.bride.charAt(0)} &amp; {INVITATION.couple.groom.charAt(0)}
+                </span>
+                <span className="h-px w-8 bg-gradient-to-r from-transparent via-stone-300 to-transparent" />
+              </p>
+            </div>
 
-                    <motion.p
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 2, delay: 1.8 }}
-                      className="text-3xl md:text-6xl text-[#2d5a27] tracking-[0.4em] font-bold drop-shadow-[0_2px_10px_rgba(255,255,255,0.8)] self-end"
-                    >
-                      {INVITATION.couple.groom}
-                    </motion.p>
-                  </div>
-                </motion.div>
-
-                <motion.button
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  onClick={() => setIsOpened(true)}
-                  className="absolute bottom-10 right-10 z-[110] px-8 py-3 bg-white/40 backdrop-blur-md text-[#2d5a27] text-xs tracking-[0.35em] rounded-full hover:bg-white/60 transition-all font-bold"
-                >
-                  ආරාධනයට පිවිසෙන්න
-                </motion.button>
-              </>
-            )}
+            <div className="absolute top-0 left-0 w-44 h-44 pointer-events-none overflow-hidden z-20">
+              <img src="/images/silver_orchid_corner.png" className="w-full h-full object-contain -rotate-90" alt="" />
+            </div>
+            <div className="absolute top-0 right-0 w-44 h-44 pointer-events-none overflow-hidden z-20">
+              <img src="/images/silver_orchid_corner.png" className="w-full h-full object-contain" alt="" />
+            </div>
           </motion.div>
         ) : (
           <motion.div
@@ -525,7 +518,7 @@ export default function WeddingInvitation() {
               className="fixed top-6 right-6 z-50 bg-white/80 backdrop-blur-md p-3 rounded-full shadow-lg text-[#2d5a27] hover:bg-emerald-50 transition-colors"
             >
               <div className="flex flex-col items-center">
-                <div className="text-[11px] tracking-widest font-bold">වසා දමන්න</div>
+                <div className="text-[11px] tracking-widest font-bold">Close</div>
               </div>
             </motion.button>
 
@@ -553,17 +546,17 @@ export default function WeddingInvitation() {
                   transition={{ delay: 0.15, duration: 0.8 }}
                   className="mt-10"
                 >
-                  <h1 className="text-6xl sm:text-7xl md:text-8xl text-[#2d5a27] italic leading-none drop-shadow-[0_0_15px_rgba(255,255,255,0.9)]">
+                  <h1 className="font-playball text-6xl sm:text-7xl md:text-8xl text-[#2d5a27] leading-none drop-shadow-[0_0_15px_rgba(255,255,255,0.9)]">
                     {INVITATION.couple.bride}
                   </h1>
 
                   <div className="mt-6 flex items-center justify-center gap-5">
                     <div className="h-px w-14 bg-[#2d5a27]/40" />
-                    <span className="text-4xl md:text-5xl text-[#2d5a27] drop-shadow-[0_0_8px_rgba(255,255,255,0.8)] font-bold">සහ</span>
+                    <span className="text-4xl md:text-5xl text-[#2d5a27] drop-shadow-[0_0_8px_rgba(255,255,255,0.8)] font-playball">&amp;</span>
                     <div className="h-px w-14 bg-[#2d5a27]/40" />
                   </div>
 
-                  <h1 className="mt-6 text-6xl sm:text-7xl md:text-8xl text-[#2d5a27] italic leading-none drop-shadow-[0_0_15px_rgba(255,255,255,0.9)]">
+                  <h1 className="font-playball mt-6 text-6xl sm:text-7xl md:text-8xl text-[#2d5a27] leading-none drop-shadow-[0_0_15px_rgba(255,255,255,0.9)]">
                     {INVITATION.couple.groom}
                   </h1>
                 </motion.div>
@@ -575,7 +568,7 @@ export default function WeddingInvitation() {
                   className="mt-4 md:mt-12"
                 >
                   <p className="mt-1 md:mt-5 text-[#2d5a27]/70 text-sm md:text-base tracking-[0.15em] font-medium leading-loose max-w-2xl mx-auto">
-                    අපගේ ජීවිතයේ අමතක නොවන සුබ මොහොත ඔබ සමඟ බෙදා ගැනීමට කැමැත්තෙමු!
+                    We would love to share the most unforgettable moment of our lives with you!
                   </p>
                 </motion.div>
               </div>
@@ -624,21 +617,21 @@ export default function WeddingInvitation() {
 
                   <div className="text-[#2d5a27] space-y-6 max-w-3xl mx-auto leading-relaxed text-base md:text-lg">
                     <p className="text-slate-700">
-                      කුමාරප්පෙරුම මහතාගේ සහ එම මහත්මියගේ ආදරණීය දියණිය වන
+                      {INVITATION.couple.brideParents}
                     </p>
-                    <h3 className="text-3xl md:text-4xl font-bold text-[#3f7a39] my-2">
-                      මලීෂා කුමාරප්පෙරුම
+                    <h3 className="font-playball text-4xl md:text-5xl text-[#3f7a39] my-2">
+                      {INVITATION.couple.brideFull}
                     </h3>
 
                     <p className="text-slate-700">
-                      හේවාගජමගේ මහතාගේ සහ එම මහත්මියගේ ආදරණීය පුත් වන
+                      {INVITATION.couple.groomParents}
                     </p>
-                    <h3 className="text-3xl md:text-4xl font-bold text-[#3f7a39] my-2">
-                      කවිඳු ශාවින්ද
+                    <h3 className="font-playball text-4xl md:text-5xl text-[#3f7a39] my-2">
+                      {INVITATION.couple.groomFull}
                     </h3>
 
                     <p className="text-slate-700 max-w-2xl mx-auto pt-2">
-                      සමඟ අතිනත ගන්නා සොඳුරු මොහොත, ඔබගේ ආශීර්වාදයෙන් වර්ණවත් කර ගැනීමට සෙනෙහසින් ඇරයුම් කරන්නෙමු.
+                      We joyfully invite you to share in our happiness and bless us with your presence as we join hands in marriage.
                     </p>
 
 
@@ -654,7 +647,7 @@ export default function WeddingInvitation() {
                   className="mb-8"
                 >
                   <h2 className="text-xl md:text-2xl text-[#3f7a39] tracking-[0.5em] font-bold">
-                    ශ්‍රී සුභ මංගලම්
+                    Wedding Celebration
                   </h2>
                 </motion.div>
 
@@ -675,7 +668,7 @@ export default function WeddingInvitation() {
                         </div>
                         <div className="pt-1">
                           <div className="text-xs md:text-[11px] tracking-[0.5em] font-bold text-[#2d5a27]/50 mb-1">
-                            දිනය
+                            Date
                           </div>
                           <div className="text-base md:text-lg text-[#2d5a27] tracking-wide font-bold">
                             {INVITATION.date.displayLong}
@@ -689,10 +682,10 @@ export default function WeddingInvitation() {
                         </div>
                         <div className="pt-1">
                           <div className="text-xs md:text-[11px] tracking-[0.5em] font-bold text-[#2d5a27]/50 mb-1">
-                            වේලාව
+                            Time
                           </div>
                           <div className="text-base md:text-lg text-[#2d5a27] tracking-wide font-bold">
-                            පෝරුව චාරිත්‍ර {INVITATION.time.ceremonyStart}ට
+                            Poruwa Ceremony at {INVITATION.time.ceremonyStart}
                           </div>
                         </div>
                       </div>
@@ -703,7 +696,7 @@ export default function WeddingInvitation() {
                         </div>
                         <div className="pt-1">
                           <div className="text-xs md:text-[11px] tracking-[0.5em] font-bold text-[#2d5a27]/50 mb-1">
-                            ස්ථානය
+                            Venue
                           </div>
                           <div className="text-base md:text-lg text-[#2d5a27] tracking-wide font-bold">
                             {INVITATION.venue.name}, {INVITATION.venue.city}
@@ -757,7 +750,7 @@ export default function WeddingInvitation() {
                     />
 
                     <h2 className="text-3xl md:text-6xl text-white tracking-[0.25em] md:tracking-[0.4em] font-bold leading-tight">
-                      මෙම දිනය <span className="mx-2 md:mx-4 text-[#dcebe1]">සුරකින්න</span>
+                      Save <span className="mx-2 md:mx-4 text-[#dcebe1]">the Date</span>
                     </h2>
 
                     <div className="mt-10 flex items-center justify-center gap-6">
@@ -780,7 +773,7 @@ export default function WeddingInvitation() {
                   className="mt-12 md:mt-20 flex flex-col items-center gap-4"
                 >
                   <p className="text-sm md:text-base tracking-[0.6em] text-white font-bold text-center">
-                    ආදරයෙන් පිරුණු මොහොතකට රැඳී සිටින්න
+                    Counting down to our special day
                   </p>
 
                   <div className="flex gap-2">
@@ -806,7 +799,7 @@ export default function WeddingInvitation() {
                   viewport={{ once: true }}
                   className="text-2xl md:text-4xl text-slate-800 tracking-[0.3em] mb-8 md:mb-12 text-center"
                 >
-                  පැමිණීම තහවුරු කිරීම
+                  RSVP
                 </motion.h2>
 
                 <motion.div
@@ -818,15 +811,15 @@ export default function WeddingInvitation() {
                 >
                   <div className="w-full rounded-[1.5rem] p-6 md:p-8 flex flex-col items-center">
                     <h3 className="text-2xl md:text-4xl text-slate-800 mb-8 text-center">
-                      ඔබ පැමිණෙන්නේද?
+                      Will you join us?
                     </h3>
 
                     <form className="w-full space-y-6 text-left" onSubmit={handleRsvpSubmit}>
                       <div className="space-y-2">
-                        <label className="text-xs font-bold text-slate-500 ml-1">ඔබගේ නම</label>
+                        <label className="text-xs font-bold text-slate-500 ml-1">Your Name</label>
                         <input
                           type="text"
-                          placeholder="ඔබගේ නම මෙහි ලියන්න..."
+                          placeholder="Enter your name..."
                           value={rsvpForm.name}
                           onChange={(e) => {
                             setRsvpStatus("idle");
@@ -839,7 +832,7 @@ export default function WeddingInvitation() {
 
                       <div className="space-y-4 pt-2">
                         <label className="text-xs font-bold text-slate-500 ml-1">
-                          අපගේ විශේෂ දිනයට ඔබ පැමිණෙන්නේද?
+                          Will you attend our special day?
                         </label>
 
                         <button
@@ -851,7 +844,7 @@ export default function WeddingInvitation() {
                           aria-pressed={rsvpForm.guests !== "0"}
                           className={`w-full py-5 md:py-6 rounded-xl text-sm md:text-base tracking-wide transition-all shadow-sm flex items-center justify-center px-4 leading-relaxed active:scale-[0.98] ${rsvpForm.guests !== "0" ? "bg-[#2d5a27] text-white hover:bg-[#1a5c4a]" : "bg-[#f3f3f3] hover:bg-slate-200 text-slate-700"}`}
                         >
-                          ඔව්, මම ආදරයෙන් පැමිණෙන්නම්!
+                          Joyfully accept
                         </button>
 
                         <button
@@ -863,7 +856,7 @@ export default function WeddingInvitation() {
                           aria-pressed={rsvpForm.guests === "0"}
                           className={`w-full py-5 md:py-6 rounded-xl text-sm md:text-base tracking-wide transition-all shadow-sm flex items-center justify-center px-4 leading-relaxed active:scale-[0.98] ${rsvpForm.guests === "0" ? "bg-[#2d5a27] text-white hover:bg-[#1a5c4a]" : "bg-[#f3f3f3] hover:bg-slate-200 text-slate-700"}`}
                         >
-                          කණගාටුයි, මට පැමිණිය නොහැක. නමුත් මගේ ආශීර්වාදය ඔබ සමඟයි.
+                          Regretfully decline, but sending my blessings
                         </button>
                       </div>
 
@@ -873,8 +866,8 @@ export default function WeddingInvitation() {
                             }`}
                         >
                           {rsvpStatus === "success"
-                            ? "ඔබගේ පැමිණීම තහවුරු කිරීම සාර්ථකව යවා ඇත."
-                            : "කරුණාකර ඔබගේ නම ඇතුළත් කර නැවත උත්සාහ කරන්න."}
+                            ? "Thank you! Your response has been sent."
+                            : "Please enter your name and try again."}
                         </p>
                       )}
 
@@ -884,11 +877,11 @@ export default function WeddingInvitation() {
                           disabled={rsvpStatus === "sending"}
                           className="w-full bg-[#2d5a27] text-white py-4 md:py-5 rounded-xl text-sm md:text-base tracking-[0.2em] font-bold hover:bg-[#1a5c4a] transition-all shadow-md disabled:opacity-70"
                         >
-                          {rsvpStatus === "sending" ? "යවමින්..." : "තහවුරු කරන්න"}
+                          {rsvpStatus === "sending" ? "Sending..." : "Confirm"}
                         </button>
 
                         <p className="text-xs text-slate-400 mt-4 text-center leading-relaxed">
-                          ඔබගේ ප්‍රතිචාරය පුද්ගලිකව තබා ගනු ලැබේ.
+                          Your response will be kept private.
                         </p>
                       </div>
                     </form>
@@ -919,29 +912,31 @@ export default function WeddingInvitation() {
                     <div className="h-px w-10 bg-[#2d5a27]/20" />
                   </div>
 
-                  <h2 className="text-5xl md:text-7xl bg-gradient-to-r from-[#3f7a39] via-[#2d5a27] to-[#3f7a39] bg-clip-text text-transparent italic">
-                    ස්තූතියි
+                  <h2 className="font-playball text-5xl md:text-7xl bg-gradient-to-r from-[#3f7a39] via-[#2d5a27] to-[#3f7a39] bg-clip-text text-transparent italic">
+                    Thank You
                   </h2>
 
                   <p className="text-[#2d5a27]/70 text-sm md:text-base tracking-[0.25em] font-medium leading-loose max-w-3xl mx-auto">
-                    සෙනෙහසින් ලියැවෙන අපගේ ජීවිත කතාවේ සුන්දරතම දිනය, ඔබගේ පැමිණීමෙන් තවත් අර්ථවත් වනු ඇතැයි අප විශ්වාස කරමු
+                    Your presence will make the most beautiful day of our love story even more meaningful.
                   </p>
 
-                  <div className="pt-6 flex flex-col items-center gap-4 text-center w-full max-w-xl mx-auto">
-                    <div className="h-px w-24 bg-[#2d5a27]/20" />
-                    <p className="text-slate-500 text-xs tracking-[0.4em] font-bold mt-2">
-                      සම්බන්ධතා
-                    </p>
+                  {INVITATION.rsvpContacts.length > 0 && (
+                    <div className="pt-6 flex flex-col items-center gap-4 text-center w-full max-w-xl mx-auto">
+                      <div className="h-px w-24 bg-[#2d5a27]/20" />
+                      <p className="text-slate-500 text-xs tracking-[0.4em] font-bold mt-2">
+                        Contact
+                      </p>
 
-                    <div className="flex flex-wrap justify-center gap-x-10 gap-y-2 text-[#2d5a27]/70 text-base tracking-widest font-normal">
-                      {INVITATION.rsvpContacts.map((line) => (
-                        <p key={line}>{line}</p>
-                      ))}
+                      <div className="flex flex-wrap justify-center gap-x-10 gap-y-2 text-[#2d5a27]/70 text-base tracking-widest font-normal">
+                        {INVITATION.rsvpContacts.map((line) => (
+                          <p key={line}>{line}</p>
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   <p className="text-sm md:text-base tracking-[0.5em] text-[#2d5a27]/50 font-bold pt-12">
-                    © 2026 {INVITATION.couple.bride} සහ {INVITATION.couple.groom}
+                    © 2026 {INVITATION.couple.bride} &amp; {INVITATION.couple.groom}
                   </p>
                 </motion.div>
               </div>
@@ -979,14 +974,18 @@ export default function WeddingInvitation() {
         dangerouslySetInnerHTML={{
           __html: `
             .dl-manel-bold,
-            .dl-manel-bold * {
-              font-family: 'Abhaya Libre', Arial, sans-serif !important;
-            }
-
             input,
             textarea,
             button {
-              font-family: 'Abhaya Libre', Arial, sans-serif !important;
+              font-family: 'Montserrat', sans-serif;
+            }
+
+            .dl-manel-bold .intro-cinzel {
+              font-family: 'Cinzel', serif !important;
+            }
+
+            .dl-manel-bold .intro-montserrat {
+              font-family: 'Montserrat', sans-serif !important;
             }
 
             @keyframes spin-slow {
