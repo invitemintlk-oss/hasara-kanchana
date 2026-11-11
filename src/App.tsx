@@ -1,38 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, MapPin, Calendar, Clock, ChevronDown } from "lucide-react";
+import { INVITATION, getGuestNameFromUrl } from "./invitation";
 
-const INVITATION = {
-  couple: {
-    bride: "Hasara",
-    groom: "Kanchana",
-    brideFull: "Hasara",
-    groomFull: "Kanchana",
-    brideParents: "Beloved daughter of Mr. & Mrs. Abeysingha",
-    groomParents: "Beloved son of Mr. & Mrs. Garumanna",
-  },
-  date: {
-    displayNumeric: "14 . 12 . 2026",
-    displayLong: "Monday, 14th December 2026",
-    countdownTarget: "2026-12-14T11:24:00+05:30",
-  },
-  time: {
-    ceremonyStart: "11:24 AM",
-    ceremonyEnd: "3:30 PM",
-    registration: "10:45 AM",
-    welcome: "9:30 AM",
-  },
-  venue: {
-    name: "Hotel Green Court",
-    city: "Homagama",
-    mapQuery: "Hotel Green Court, Homagama",
-    googleMapsLink: "https://www.google.com/maps/search/?api=1&query=Hotel+Green+Court+Homagama",
-  },
-  // Add phone numbers here, e.g. "Hasara - +94 7X XXX XXXX"
-  rsvpContacts: [] as string[],
-};
 
-const backgroundMusic = "/handawaka_loud.mp3";
+const MAX_GUESTS = 10;
+const backgroundMusic = "/handawaka_cut.mp3";
 const googleScriptUrl =
   "https://script.google.com/macros/s/AKfycbx6tVTRxM0Fjc10fR0a35PjSjb9JJN-9F7zDpxyJvVMhdZ3A-_rOkAV8x8Cwpeqfp5NLw/exec";
 
@@ -267,11 +240,10 @@ export default function WeddingInvitation() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [hasAttemptedAutoplay, setHasAttemptedAutoplay] = useState(false);
 
-  const searchParams = new URLSearchParams(window.location.search);
-  const guestName = searchParams.get("to");
+  const guestName = getGuestNameFromUrl();
 
   const [rsvpForm, setRsvpForm] = useState({
-    name: "",
+    name: guestName,
     guests: "1",
   });
 
@@ -314,7 +286,7 @@ export default function WeddingInvitation() {
       });
 
       setRsvpStatus("success");
-      setRsvpForm({ name: "", guests: "1" });
+      setRsvpForm({ name: guestName, guests: "1" });
     } catch {
       setRsvpStatus("error");
     }
@@ -532,15 +504,6 @@ export default function WeddingInvitation() {
               />
 
               <div className="relative z-10 w-full max-w-5xl px-6 text-center mt-12 md:mt-0">
-                {guestName && (
-                  <motion.p
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="text-lg md:text-xl font-bold text-[#2d5a27] mb-2 drop-shadow-[0_0_10px_rgba(255,255,255,0.8)]"
-                  >
-                    {guestName}
-                  </motion.p>
-                )}
 
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
@@ -632,9 +595,26 @@ export default function WeddingInvitation() {
                       {INVITATION.couple.brideFull}
                     </h3>
 
-                    <p className="text-slate-700 max-w-2xl mx-auto pt-2">
-                      We joyfully invite you to share in our happiness and bless us with your presence as we join hands in marriage.
-                    </p>
+                    {guestName ? (
+                      <div className="max-w-2xl mx-auto pt-4">
+                        <div className="flex items-center justify-center gap-3 opacity-60 mb-3">
+                          <div className="h-px w-10 bg-[#b8902e]" />
+                          <div className="w-1.5 h-1.5 rotate-45 bg-[#b8902e]" />
+                          <div className="h-px w-10 bg-[#b8902e]" />
+                        </div>
+                        <p className="text-slate-700">We joyfully invite</p>
+                        <p className="font-playball text-4xl md:text-5xl text-[#b8902e] my-3 break-words leading-tight">
+                          {guestName}
+                        </p>
+                        <p className="text-slate-700">
+                          to share in our happiness and bless us with your presence as we join hands in marriage.
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="text-slate-700 max-w-2xl mx-auto pt-2">
+                        We joyfully invite you to share in our happiness and bless us with your presence as we join hands in marriage.
+                      </p>
+                    )}
 
 
 
@@ -713,6 +693,17 @@ export default function WeddingInvitation() {
                           </a>
                         </div>
                       </div>
+                    </div>
+
+                    <div className="relative z-10 w-full mt-8 overflow-hidden rounded-2xl border border-[#3f7a39]/20 shadow-inner">
+                      <iframe
+                        title={`Map to ${INVITATION.venue.name}`}
+                        src={`https://www.google.com/maps?q=${encodeURIComponent(INVITATION.venue.mapQuery)}&output=embed`}
+                        className="w-full h-64 md:h-80 border-0 block"
+                        loading="lazy"
+                        referrerPolicy="no-referrer-when-downgrade"
+                        allowFullScreen
+                      />
                     </div>
                   </motion.div>
                 </div>
@@ -841,7 +832,7 @@ export default function WeddingInvitation() {
                           type="button"
                           onClick={() => {
                             setRsvpStatus("idle");
-                            setRsvpForm((prev) => ({ ...prev, guests: "1" }));
+                            setRsvpForm((prev) => ({ ...prev, guests: prev.guests === "0" ? "1" : prev.guests }));
                           }}
                           aria-pressed={rsvpForm.guests !== "0"}
                           className={`w-full py-5 md:py-6 rounded-xl text-sm md:text-base tracking-wide transition-all shadow-sm flex items-center justify-center px-4 leading-relaxed active:scale-[0.98] ${rsvpForm.guests !== "0" ? "bg-[#2d5a27] text-white hover:bg-[#1a5c4a]" : "bg-[#f3f3f3] hover:bg-slate-200 text-slate-700"}`}
@@ -861,6 +852,41 @@ export default function WeddingInvitation() {
                           Regretfully decline, but sending my blessings
                         </button>
                       </div>
+
+                      {rsvpForm.guests !== "0" && (
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-slate-500 ml-1">Number of Guests</label>
+                          <div className="flex items-center justify-between rounded-xl bg-[#f3f3f3] px-3 py-3">
+                            <button
+                              type="button"
+                              aria-label="Fewer guests"
+                              disabled={Number(rsvpForm.guests) <= 1}
+                              onClick={() => {
+                                setRsvpStatus("idle");
+                                setRsvpForm((prev) => ({ ...prev, guests: String(Math.max(1, Number(prev.guests) - 1)) }));
+                              }}
+                              className="w-11 h-11 rounded-full bg-white text-[#2d5a27] text-2xl leading-none shadow-sm disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 transition"
+                            >
+                              −
+                            </button>
+                            <span className="text-base md:text-lg font-bold text-slate-700">
+                              {rsvpForm.guests} {rsvpForm.guests === "1" ? "Guest" : "Guests"}
+                            </span>
+                            <button
+                              type="button"
+                              aria-label="More guests"
+                              disabled={Number(rsvpForm.guests) >= MAX_GUESTS}
+                              onClick={() => {
+                                setRsvpStatus("idle");
+                                setRsvpForm((prev) => ({ ...prev, guests: String(Math.min(MAX_GUESTS, Number(prev.guests) + 1)) }));
+                              }}
+                              className="w-11 h-11 rounded-full bg-white text-[#2d5a27] text-2xl leading-none shadow-sm disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 transition"
+                            >
+                              +
+                            </button>
+                          </div>
+                        </div>
+                      )}
 
                       {(rsvpStatus === "success" || rsvpStatus === "error") && (
                         <p
@@ -940,6 +966,18 @@ export default function WeddingInvitation() {
                   <p className="text-sm md:text-base tracking-[0.5em] text-[#2d5a27]/50 font-bold pt-12">
                     © 2026 {INVITATION.couple.groom} &amp; {INVITATION.couple.bride}
                   </p>
+
+                  <p className="text-[#b8902e] text-xs mt-2 font-sans tracking-wider">
+                    Want a beautiful wedding website like this? Create yours with{" "}
+                    <a
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-[#2d5a27] font-bold underline underline-offset-2 hover:text-[#D4AF37] transition-colors"
+                      href="https://wa.me/94707819074"
+                    >
+                      invitemint
+                    </a>
+                  </p>
                 </motion.div>
               </div>
             </section>
@@ -956,11 +994,11 @@ export default function WeddingInvitation() {
             input,
             textarea,
             button {
-              font-family: 'Montserrat', sans-serif;
+              font-family: 'Cormorant Garamond', Georgia, serif;
             }
 
             .dl-manel-bold .intro-cinzel {
-              font-family: 'Cinzel', serif !important;
+              font-family: 'Marcellus SC', Georgia, serif !important;
             }
 
             .dl-manel-bold .intro-montserrat {

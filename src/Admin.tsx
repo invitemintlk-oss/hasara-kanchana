@@ -1,198 +1,171 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from "react";
+import {
+  INVITATION,
+  GUEST_PREFIXES,
+  type GuestPrefix,
+  formatGuestDisplayName,
+  buildInvitationLink,
+  buildInvitationMessage,
+} from "./invitation";
 
-interface GeneratedLink {
-  id: string;
-  prefix: string;
-  guestName: string;
-  url: string;
-  createdAt: string;
+type Generated = { displayName: string; link: string; message: string };
+
+async function copyText(text: string) {
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch {
+    // Fallback for browsers/contexts without the async clipboard API
+    const el = document.createElement("textarea");
+    el.value = text;
+    el.style.position = "fixed";
+    el.style.opacity = "0";
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand("copy");
+    document.body.removeChild(el);
+  }
 }
 
 export default function Admin() {
-  const [prefix, setPrefix] = useState('Mr. & Mrs.');
-  const [guestName, setGuestName] = useState('');
-  const [links, setLinks] = useState<GeneratedLink[]>([]);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [prefix, setPrefix] = useState<GuestPrefix>("Mr.");
+  const [guestName, setGuestName] = useState("");
+  const [generated, setGenerated] = useState<Generated | null>(null);
+  const [toast, setToast] = useState("");
 
   useEffect(() => {
-    const saved = localStorage.getItem('generatedLinks');
-    if (saved) {
-      setLinks(JSON.parse(saved));
-    }
-  }, []);
-
-  const prefixes = [
-    'Mr. & Mrs.',
-    'Mr.',
-    'Mrs.',
-    'Ms.',
-    'Miss',
-    'Dr. & Mrs.',
-    'Dr.',
-    'Prof.',
-    'Rev.',
-    'To'
-  ];
+    if (!toast) return;
+    const t = setTimeout(() => setToast(""), 2000);
+    return () => clearTimeout(t);
+  }, [toast]);
 
   const handleGenerate = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!guestName.trim()) return;
+    const displayName = formatGuestDisplayName(prefix, guestName);
+    if (!displayName) return;
 
-    const fullName = `${prefix} ${guestName.trim()}`;
-    const baseUrl = window.location.origin;
-    const url = `${baseUrl}/?to=${encodeURIComponent(fullName)}`;
-    
-    const newLink: GeneratedLink = {
-      id: crypto.randomUUID(),
-      prefix,
-      guestName: guestName.trim(),
-      url,
-      createdAt: new Date().toLocaleString('en-GB', { 
-        day: '2-digit', 
-        month: '2-digit', 
-        year: 'numeric', 
-        hour: '2-digit', 
-        minute: '2-digit' 
-      }),
-    };
-
-    const newLinks = [newLink, ...links];
-    setLinks(newLinks);
-    localStorage.setItem('generatedLinks', JSON.stringify(newLinks));
-    setGuestName('');
+    const link = buildInvitationLink(window.location.origin, displayName);
+    setGenerated({ displayName, link, message: buildInvitationMessage(displayName, link) });
   };
 
-  const handleCopy = async (link: GeneratedLink) => {
-    try {
-      await navigator.clipboard.writeText(link.url);
-      setCopiedId(link.id);
-      setTimeout(() => setCopiedId(null), 2000);
-    } catch (err) {
-      console.error('Failed to copy', err);
-    }
+  const handleCopy = async (text: string, label: string) => {
+    await copyText(text);
+    setToast(label);
   };
 
-  const handleDelete = (id: string) => {
-    const newLinks = links.filter(l => l.id !== id);
-    setLinks(newLinks);
-    localStorage.setItem('generatedLinks', JSON.stringify(newLinks));
-  };
+  const { groom, bride } = INVITATION.couple;
 
   return (
-    <div className="min-h-screen bg-slate-50 py-12 px-4 font-sans">
-      <div className="max-w-3xl mx-auto space-y-8">
-        
-        {/* Generator Card */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 md:p-8">
-          <h1 className="text-2xl font-bold text-slate-800 mb-6 flex items-center gap-2">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-600">
-              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
-              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
-            </svg>
-            LINK GENERATOR
-          </h1>
+    <main className="min-h-[100dvh] h-[100dvh] overflow-y-auto bg-gradient-to-br from-rose-50 via-white to-amber-50 px-4 py-10 font-montserrat text-stone-800">
+      <div className="mx-auto w-full max-w-xl">
+        <header className="text-center mb-8">
+          <p className="text-[10px] uppercase tracking-[0.4em] text-stone-400 font-bold">Admin</p>
+          <h1 className="font-playball text-4xl md:text-5xl text-[#9d174d] mt-2">Invitation Link Generator</h1>
+          <p className="text-sm text-stone-500 mt-2">
+            {groom} &amp; {bride}
+          </p>
+        </header>
 
-          <form onSubmit={handleGenerate} className="space-y-5">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-600">Select Prefix</label>
-                <select
-                  value={prefix}
-                  onChange={(e) => setPrefix(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all appearance-none"
-                >
-                  {prefixes.map(p => (
-                    <option key={p} value={p}>{p}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="space-y-2 md:col-span-2">
-                <label className="text-sm font-semibold text-slate-600">Guest Name</label>
-                <input
-                  type="text"
-                  placeholder="e.g. John Doe"
-                  value={guestName}
-                  onChange={(e) => setGuestName(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all placeholder:text-slate-400"
-                  required
-                />
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3.5 rounded-xl transition-colors shadow-sm active:scale-[0.99] flex justify-center items-center gap-2"
+        <form onSubmit={handleGenerate} className="bg-white rounded-3xl shadow-[0_20px_50px_-20px_rgba(0,0,0,0.15)] border border-pink-100 p-6 md:p-8 space-y-5">
+          <div className="space-y-2">
+            <label htmlFor="prefix" className="text-xs font-bold uppercase tracking-[0.2em] text-stone-500">
+              Select Prefix
+            </label>
+            <select
+              id="prefix"
+              value={prefix}
+              onChange={(e) => setPrefix(e.target.value as GuestPrefix)}
+              className="w-full rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-pink-300"
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="12" y1="5" x2="12" y2="19"></line>
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-              </svg>
-              Generate Link
-            </button>
-          </form>
-        </div>
-
-        {/* Generated Links List */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 md:p-8">
-          <h2 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400">
-              <circle cx="12" cy="12" r="10"></circle>
-              <polyline points="12 6 12 12 16 14"></polyline>
-            </svg>
-            Recently Generated Links
-          </h2>
-
-          {links.length === 0 ? (
-            <div className="text-center py-10 text-slate-400 text-sm">
-              No links generated yet.
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {links.map((link) => (
-                <div key={link.id} className="group flex flex-col md:flex-row md:items-center justify-between p-4 rounded-xl border border-slate-100 bg-slate-50/50 hover:border-slate-200 transition-colors gap-4">
-                  <div className="min-w-0">
-                    <p className="font-medium text-slate-800 truncate">
-                      {link.prefix} {link.guestName}
-                    </p>
-                    <p className="text-xs text-slate-500 mt-1">
-                      {link.createdAt.replace(',', '')}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      onClick={() => handleCopy(link)}
-                      className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700 text-sm font-medium rounded-lg transition-colors"
-                    >
-                      {copiedId === link.id ? (
-                        <>
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-500"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                          Copied!
-                        </>
-                      ) : (
-                        <>
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                          Copy
-                        </>
-                      )}
-                    </button>
-                    
-                    <button
-                      onClick={() => handleDelete(link.id)}
-                      className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                      title="Delete link"
-                    >
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
-                    </button>
-                  </div>
-                </div>
+              {GUEST_PREFIXES.map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
               ))}
-            </div>
-          )}
-        </div>
+            </select>
+          </div>
 
+          <div className="space-y-2">
+            <label htmlFor="guestName" className="text-xs font-bold uppercase tracking-[0.2em] text-stone-500">
+              Guest Name
+            </label>
+            <input
+              id="guestName"
+              type="text"
+              value={guestName}
+              onChange={(e) => setGuestName(e.target.value)}
+              placeholder="e.g. Sanjaya"
+              className="w-full rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-pink-300"
+              required
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={!guestName.trim()}
+            className="w-full rounded-full bg-[#9d174d] py-4 text-sm font-bold uppercase tracking-[0.25em] text-white hover:bg-[#831843] disabled:opacity-40 disabled:cursor-not-allowed transition"
+          >
+            Generate Link
+          </button>
+        </form>
+
+        <section className="mt-6 bg-white rounded-3xl shadow-[0_20px_50px_-20px_rgba(0,0,0,0.12)] border border-pink-100 p-6 md:p-8 space-y-5">
+          <div className="space-y-2">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-stone-500">Generated Link</p>
+            {generated ? (
+              <a
+                href={generated.link}
+                target="_blank"
+                rel="noreferrer"
+                className="block break-all rounded-xl bg-pink-50 px-4 py-3 text-sm text-[#9d174d] underline underline-offset-2"
+              >
+                {generated.link}
+              </a>
+            ) : (
+              <p className="rounded-xl bg-stone-50 px-4 py-3 text-sm text-stone-400">Generate a link to see it here.</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-stone-500">Message Preview</p>
+            {generated ? (
+              <pre className="whitespace-pre-wrap break-words rounded-xl bg-stone-50 px-4 py-3 text-sm leading-relaxed font-montserrat text-stone-700 max-h-80 overflow-y-auto">
+                {generated.message}
+              </pre>
+            ) : (
+              <p className="rounded-xl bg-stone-50 px-4 py-3 text-sm text-stone-400">The personalised greeting will appear here.</p>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <button
+              type="button"
+              disabled={!generated}
+              onClick={() => generated && handleCopy(generated.link, "Link copied!")}
+              className="rounded-full border border-[#9d174d] py-3 text-xs font-bold uppercase tracking-[0.2em] text-[#9d174d] hover:bg-pink-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+            >
+              Copy Link Only
+            </button>
+            <button
+              type="button"
+              disabled={!generated}
+              onClick={() => generated && handleCopy(generated.message, "Message copied!")}
+              className="rounded-full bg-[#9d174d] py-3 text-xs font-bold uppercase tracking-[0.2em] text-white hover:bg-[#831843] disabled:opacity-40 disabled:cursor-not-allowed transition"
+            >
+              Copy Full Message
+            </button>
+          </div>
+        </section>
       </div>
-    </div>
+
+      <div
+        role="status"
+        aria-live="polite"
+        className={`fixed bottom-6 left-1/2 -translate-x-1/2 rounded-full bg-stone-900 px-5 py-2.5 text-sm text-white shadow-lg transition-all duration-300 ${
+          toast ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3 pointer-events-none"
+        }`}
+      >
+        {toast}
+      </div>
+    </main>
   );
 }
