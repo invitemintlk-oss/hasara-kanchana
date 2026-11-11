@@ -32,7 +32,7 @@ const INVITATION = {
   rsvpContacts: [] as string[],
 };
 
-const backgroundMusic = "/handawaka-various-artists.mp3";
+const backgroundMusic = "/handawaka_loud.mp3";
 const googleScriptUrl =
   "https://script.google.com/macros/s/AKfycbx6tVTRxM0Fjc10fR0a35PjSjb9JJN-9F7zDpxyJvVMhdZ3A-_rOkAV8x8Cwpeqfp5NLw/exec";
 
@@ -163,7 +163,7 @@ function CountdownTimer({ isDark = false }: { isDark?: boolean }) {
           className="relative group"
         >
           <div
-            className={`relative w-[4.5rem] h-[6.5rem] sm:w-20 sm:h-28 md:w-32 md:h-44 rounded-t-full shadow-[0_15px_35px_-10px_rgba(0,0,0,0.15)] flex flex-col items-center justify-center overflow-hidden transition-all duration-700 group-hover:-translate-y-3 ${isDark ? "bg-[#2d5a27] " : "bg-white "
+            className={`relative w-[4.5rem] h-[6.5rem] sm:w-20 sm:h-28 md:w-32 md:h-44 rounded-t-full shadow-[0_15px_35px_-10px_rgba(0,0,0,0.15)] flex flex-col items-center justify-center overflow-hidden transition-all duration-700 group-hover:-translate-y-3 ${isDark ? "bg-gradient-to-b from-[#b8902e] to-[#8a6514] " : "bg-white "
               }`}
           >
             <div
@@ -263,6 +263,7 @@ function Gallery() {
 export default function WeddingInvitation() {
   const [isOpened, setIsOpened] = useState(false);
   const [showDancers, setShowDancers] = useState(false);
+  const [introStarted, setIntroStarted] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [hasAttemptedAutoplay, setHasAttemptedAutoplay] = useState(false);
 
@@ -321,18 +322,6 @@ export default function WeddingInvitation() {
 
 
 
-  const toggleMusic = () => {
-    if (!audioRef.current) return;
-
-    if (isPlaying) {
-      audioRef.current.pause();
-    } else {
-      audioRef.current.play();
-    }
-
-    setIsPlaying(!isPlaying);
-  };
-
   useEffect(() => {
     if (isOpened && !isPlaying && !hasAttemptedAutoplay && audioRef.current) {
       setHasAttemptedAutoplay(true);
@@ -369,8 +358,30 @@ export default function WeddingInvitation() {
     }
   };
 
+  const playFirstIntro = () => {
+    if (introStarted) return;
+    setIntroStarted(true);
+
+    // Start the background song first, directly inside the tap, so browsers allow it.
+    if (audioRef.current && !isPlaying) {
+      audioRef.current.volume = 1;
+      audioRef.current
+        .play()
+        .then(() => setIsPlaying(true))
+        .catch((err) => console.log("Audio play failed:", err));
+    }
+
+    if (introVideoRef.current) {
+      introVideoRef.current.currentTime = 2;
+      introVideoRef.current.play().catch(() => startDancersVideo());
+    } else {
+      startDancersVideo();
+    }
+  };
+
   const openInvitation = () => {
     setShowDancers(false);
+    setIntroStarted(false);
     setIsOpened(true);
 
     if (audioRef.current && !isPlaying) {
@@ -380,14 +391,6 @@ export default function WeddingInvitation() {
         .catch((err) => console.log("Audio play failed:", err));
     }
   };
-
-  useEffect(() => {
-    if (introVideoRef.current && !isOpened) {
-      introVideoRef.current.play().catch((err) => {
-        console.log("Intro video autoplay failed:", err);
-      });
-    }
-  }, [isOpened]);
 
   return (
     <main
@@ -413,7 +416,7 @@ export default function WeddingInvitation() {
               onEnded={openInvitation}
               onError={openInvitation}
               className="w-full h-full object-cover"
-              src="/dancers_intro.mp4"
+              src="/intro_video.mp4"
             />
 
             <motion.button
@@ -450,13 +453,12 @@ export default function WeddingInvitation() {
               <div className="relative w-full h-[35vh] md:h-full">
                 <video
                   ref={introVideoRef}
-                  autoPlay
                   muted
                   playsInline
                   preload="auto"
                   onEnded={startDancersVideo}
                   className="w-full h-full object-cover shadow-[0_25px_60px_-15px_rgba(0,0,0,0.2)]"
-                  src="/Use_the_uploaded_202604161807.mp4"
+                  src="/Use_the_uploaded_202604161807.mp4#t=2"
                 />
                 <div className="absolute inset-0 border-y-2 border-white/40 md:hidden" />
                 <div className="absolute inset-0 bg-gradient-to-b from-white/20 via-transparent to-white/20 md:hidden" />
@@ -467,15 +469,15 @@ export default function WeddingInvitation() {
 
             <motion.div
               initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 1, duration: 1 }}
-              className="relative z-[101] mt-auto mb-20 md:mb-24"
+              animate={introStarted ? { opacity: 0, y: 30 } : { opacity: 1, y: 0 }}
+              transition={introStarted ? { duration: 0.6 } : { delay: 1, duration: 1 }}
+              className={`relative z-[101] mt-auto mb-20 md:mb-24 ${introStarted ? "pointer-events-none" : ""}`}
             >
               <div className="absolute -inset-4 bg-gradient-to-r from-pink-200 via-amber-100 to-sky-200 blur-2xl opacity-40 animate-pulse" />
               <motion.button
                 whileHover={{ scale: 1.05, backgroundColor: "rgba(255, 255, 255, 1)" }}
                 whileTap={{ scale: 0.95 }}
-                onClick={startDancersVideo}
+                onClick={playFirstIntro}
                 className="group relative flex flex-col items-center gap-4 bg-white/95 backdrop-blur-md border border-white/60 px-14 py-6 rounded-full text-stone-800 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.12)] transition-all duration-500 hover:shadow-pink-200/30"
               >
                 <span className="intro-cinzel text-[15px] tracking-[0.6em] uppercase font-bold bg-gradient-to-r from-[#be185d] to-[#831843] bg-clip-text text-transparent">
@@ -491,7 +493,7 @@ export default function WeddingInvitation() {
             <div className="absolute top-12 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
               <p className="intro-cinzel text-[11px] tracking-[0.8em] font-bold uppercase flex flex-col items-center gap-3">
                 <span className="bg-gradient-to-r from-pink-300 via-pink-500 to-pink-300 bg-clip-text text-transparent opacity-80 whitespace-nowrap">
-                  {INVITATION.couple.bride.charAt(0)} &amp; {INVITATION.couple.groom.charAt(0)}
+                  {INVITATION.couple.groom.charAt(0)} &amp; {INVITATION.couple.bride.charAt(0)}
                 </span>
                 <span className="h-px w-8 bg-gradient-to-r from-transparent via-stone-300 to-transparent" />
               </p>
@@ -547,7 +549,7 @@ export default function WeddingInvitation() {
                   className="mt-10"
                 >
                   <h1 className="font-playball text-6xl sm:text-7xl md:text-8xl text-[#2d5a27] leading-none drop-shadow-[0_0_15px_rgba(255,255,255,0.9)]">
-                    {INVITATION.couple.bride}
+                    {INVITATION.couple.groom}
                   </h1>
 
                   <div className="mt-6 flex items-center justify-center gap-5">
@@ -557,7 +559,7 @@ export default function WeddingInvitation() {
                   </div>
 
                   <h1 className="font-playball mt-6 text-6xl sm:text-7xl md:text-8xl text-[#2d5a27] leading-none drop-shadow-[0_0_15px_rgba(255,255,255,0.9)]">
-                    {INVITATION.couple.groom}
+                    {INVITATION.couple.bride}
                   </h1>
                 </motion.div>
 
@@ -617,17 +619,17 @@ export default function WeddingInvitation() {
 
                   <div className="text-[#2d5a27] space-y-6 max-w-3xl mx-auto leading-relaxed text-base md:text-lg">
                     <p className="text-slate-700">
-                      {INVITATION.couple.brideParents}
-                    </p>
-                    <h3 className="font-playball text-4xl md:text-5xl text-[#3f7a39] my-2">
-                      {INVITATION.couple.brideFull}
-                    </h3>
-
-                    <p className="text-slate-700">
                       {INVITATION.couple.groomParents}
                     </p>
                     <h3 className="font-playball text-4xl md:text-5xl text-[#3f7a39] my-2">
                       {INVITATION.couple.groomFull}
+                    </h3>
+
+                    <p className="text-slate-700">
+                      {INVITATION.couple.brideParents}
+                    </p>
+                    <h3 className="font-playball text-4xl md:text-5xl text-[#3f7a39] my-2">
+                      {INVITATION.couple.brideFull}
                     </h3>
 
                     <p className="text-slate-700 max-w-2xl mx-auto pt-2">
@@ -717,7 +719,7 @@ export default function WeddingInvitation() {
               </div>
             </section>
 
-            <section className="relative py-14 md:py-48 bg-[#2d5a27] flex flex-col items-center overflow-hidden">
+            <section className="relative py-14 md:py-48 bg-gradient-to-br from-[#a8801f] via-[#d4af37] to-[#9a7420] flex flex-col items-center overflow-hidden">
               <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-black/20 via-transparent to-black/20 pointer-events-none" />
 
               <motion.div
@@ -750,15 +752,15 @@ export default function WeddingInvitation() {
                     />
 
                     <h2 className="text-3xl md:text-6xl text-white tracking-[0.25em] md:tracking-[0.4em] font-bold leading-tight">
-                      Save <span className="mx-2 md:mx-4 text-[#dcebe1]">the Date</span>
+                      Save <span className="mx-2 md:mx-4 text-[#fff4d6]">the Date</span>
                     </h2>
 
                     <div className="mt-10 flex items-center justify-center gap-6">
-                      <div className="h-[0.5px] w-8 md:w-16 bg-[#dcebe1]/50" />
-                      <span className="font-numeric text-3xl md:text-5xl text-[#dcebe1] drop-shadow-md">
+                      <div className="h-[0.5px] w-8 md:w-16 bg-[#fff4d6]/50" />
+                      <span className="font-numeric text-3xl md:text-5xl text-[#fff4d6] drop-shadow-md">
                         {INVITATION.date.displayNumeric}
                       </span>
-                      <div className="h-[0.5px] w-8 md:w-16 bg-[#dcebe1]/50" />
+                      <div className="h-[0.5px] w-8 md:w-16 bg-[#fff4d6]/50" />
                     </div>
                   </div>
                 </motion.div>
@@ -782,7 +784,7 @@ export default function WeddingInvitation() {
                         key={i}
                         animate={{ scale: [1, 1.5, 1], opacity: [0.3, 1, 0.3] }}
                         transition={{ duration: 2, repeat: Infinity, delay: i * 0.4 }}
-                        className="w-1 h-1 bg-[#dcebe1] rotate-45"
+                        className="w-1 h-1 bg-[#fff4d6] rotate-45"
                       />
                     ))}
                   </div>
@@ -936,7 +938,7 @@ export default function WeddingInvitation() {
                   )}
 
                   <p className="text-sm md:text-base tracking-[0.5em] text-[#2d5a27]/50 font-bold pt-12">
-                    © 2026 {INVITATION.couple.bride} &amp; {INVITATION.couple.groom}
+                    © 2026 {INVITATION.couple.groom} &amp; {INVITATION.couple.bride}
                   </p>
                 </motion.div>
               </div>
@@ -945,30 +947,7 @@ export default function WeddingInvitation() {
         )}
       </AnimatePresence>
 
-      <audio ref={audioRef} src={backgroundMusic} loop />
-
-      <motion.button
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        onClick={toggleMusic}
-        className="fixed bottom-6 right-6 z-[60] bg-white text-[#87937a] p-3 rounded-full shadow-lg hover:bg-[#87937a]/10 transition-colors"
-      >
-        <div className="flex flex-col items-center">
-          {isPlaying ? (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-              <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
-              <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
-            </svg>
-          ) : (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-              <line x1="23" y1="9" x2="17" y2="15" />
-              <line x1="17" y1="9" x2="23" y2="15" />
-            </svg>
-          )}
-        </div>
-      </motion.button>
+      <audio ref={audioRef} src={backgroundMusic} loop preload="auto" />
 
       <style
         dangerouslySetInnerHTML={{
