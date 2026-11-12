@@ -26,6 +26,10 @@ export const INVITATION = {
   },
   // Add phone numbers here, e.g. "Hasara - +94 7X XXX XXXX"
   rsvpContacts: [] as string[],
+  // Google Apps Script Web App URL (ends with /exec) – see code.gs for setup.
+  // Saves RSVPs to: https://docs.google.com/spreadsheets/d/1rzdKCrOCl_Pb9EK0YXGUmnKOkHvwTG8bhZvCF8bUBQk
+  rsvpScriptUrl:
+    "https://script.google.com/macros/s/AKfycbx29XyaJL9oQqgge0auxw6T10IV4S0m3q0-j4t5F7xqX8DskZ-3CD3kNmFkVVzx7iSiBQ/exec",
 };
 
 export const GUEST_PREFIXES = ["Mr.", "Mrs.", "Miss", "Mr. & Mrs.", "Family", "Dear"] as const;

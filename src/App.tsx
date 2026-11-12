@@ -44,8 +44,7 @@ const COUNTRY_CODES = [
   { flag: "🇲🇾", code: "+60" },
 ];
 const backgroundMusic = "/handawaka_cut.mp3";
-const googleScriptUrl =
-  "https://script.google.com/macros/s/AKfycbx6tVTRxM0Fjc10fR0a35PjSjb9JJN-9F7zDpxyJvVMhdZ3A-_rOkAV8x8Cwpeqfp5NLw/exec";
+const googleScriptUrl = INVITATION.rsvpScriptUrl;
 
 const publicImagePath = (fileName: string) => `/images/${fileName.replaceAll(" ", "%20")}`;
 const preImagePath = (fileName: string) => `/pre/${fileName.replaceAll(" ", "%20")}`;
@@ -297,17 +296,17 @@ export default function WeddingInvitation() {
 
   const submitToGoogleSheet = async (payload: Record<string, string>) => {
     if (!googleScriptUrl) {
-      throw new Error("Google Script URL tl ilid ke;");
+      throw new Error("RSVP sheet is not connected yet (set rsvpScriptUrl in src/invitation.ts)");
     }
 
-    const response = await fetch(googleScriptUrl, {
+    // Apps Script answers through a redirect without CORS headers, so send a
+    // simple form POST in no-cors mode. The response is opaque; a network
+    // failure still throws and is shown to the guest.
+    await fetch(googleScriptUrl, {
       method: "POST",
+      mode: "no-cors",
       body: new URLSearchParams(payload),
     });
-
-    if (!response.ok) {
-      throw new Error("b,a,Su id¾:l fkdùh");
-    }
   };
 
   const handleRsvpSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -1111,20 +1110,28 @@ export default function WeddingInvitation() {
                     © 2026 {INVITATION.couple.groom} &amp; {INVITATION.couple.bride}
                   </p>
 
-                  <p className="text-[#b8902e] text-xs mt-2 font-sans tracking-wider">
+                  <div className="flex items-center justify-center gap-3 pt-4 opacity-70">
+                    <div className="h-px w-10 bg-gradient-to-r from-transparent to-[#b8902e]" />
+                    <div className="h-1.5 w-1.5 rotate-45 bg-[#b8902e]" />
+                    <div className="h-px w-10 bg-gradient-to-l from-transparent to-[#b8902e]" />
+                  </div>
+
+                  <p className="text-[#9a7420] text-sm md:text-base mt-2 font-sans tracking-wider leading-relaxed">
                     Want a beautiful wedding website like this? Create yours with{" "}
                     <a
                       target="_blank"
                       rel="noreferrer"
-                      className="text-[#2d5a27] font-bold underline underline-offset-2 hover:text-[#D4AF37] transition-colors"
+                      className="text-[#5c140f] font-bold underline underline-offset-4 decoration-[#b8902e] hover:text-[#b8902e] transition-colors"
                       href="https://wa.me/94707819074"
                     >
                       invitemint
                     </a>
                   </p>
+
                 </motion.div>
               </div>
             </section>
+
           </motion.div>
         )}
       </AnimatePresence>
