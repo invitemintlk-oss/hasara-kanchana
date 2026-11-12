@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import {
   INVITATION,
   GUEST_PREFIXES,
+  CUSTOM_PREFIX,
   type GuestPrefix,
   formatGuestDisplayName,
   buildInvitationLink,
@@ -29,6 +30,7 @@ async function copyText(text: string) {
 export default function Admin() {
   const [prefix, setPrefix] = useState<GuestPrefix>("Mr.");
   const [guestName, setGuestName] = useState("");
+  const [customPrefix, setCustomPrefix] = useState("");
   const [generated, setGenerated] = useState<Generated | null>(null);
   const [toast, setToast] = useState("");
 
@@ -40,7 +42,7 @@ export default function Admin() {
 
   const handleGenerate = (e: React.FormEvent) => {
     e.preventDefault();
-    const displayName = formatGuestDisplayName(prefix, guestName);
+    const displayName = formatGuestDisplayName(prefix, guestName, customPrefix);
     if (!displayName) return;
 
     const link = buildInvitationLink(window.location.origin, displayName);
@@ -83,6 +85,23 @@ export default function Admin() {
               ))}
             </select>
           </div>
+
+          {prefix === CUSTOM_PREFIX && (
+            <div className="space-y-2">
+              <label htmlFor="customPrefix" className="text-xs font-bold uppercase tracking-[0.2em] text-stone-500">
+                Type Prefix
+              </label>
+              <input
+                id="customPrefix"
+                type="text"
+                value={customPrefix}
+                onChange={(e) => setCustomPrefix(e.target.value)}
+                placeholder="e.g. Prof., Rev., Hon., Uncle"
+                className="w-full rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-pink-300"
+                autoFocus
+              />
+            </div>
+          )}
 
           <div className="space-y-2">
             <label htmlFor="guestName" className="text-xs font-bold uppercase tracking-[0.2em] text-stone-500">

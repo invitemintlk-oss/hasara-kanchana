@@ -32,23 +32,42 @@ export const INVITATION = {
     "https://script.google.com/macros/s/AKfycbx29XyaJL9oQqgge0auxw6T10IV4S0m3q0-j4t5F7xqX8DskZ-3CD3kNmFkVVzx7iSiBQ/exec",
 };
 
-export const GUEST_PREFIXES = ["Mr.", "Mrs.", "Miss", "Mr. & Mrs.", "Family", "Dear"] as const;
+export const NO_PREFIX = "No prefix";
+export const CUSTOM_PREFIX = "Custom…";
+
+export const GUEST_PREFIXES = [
+  "Mr.",
+  "Mrs.",
+  "Miss",
+  "Mr. & Mrs.",
+  "Dr.",
+  "Family",
+  "Dear",
+  NO_PREFIX,
+  CUSTOM_PREFIX,
+] as const;
 export type GuestPrefix = (typeof GUEST_PREFIXES)[number];
 
 /**
  * Combine prefix + name into the name shown to the guest.
  * "Dear" is a message-style option: it adds nothing here, because the
- * greeting itself already starts with "Dear".
+ * greeting itself already starts with "Dear". "No prefix" uses the name as is.
+ * "Custom…" puts the typed prefix in front (a stray leading "Dear" is dropped).
  */
-export function formatGuestDisplayName(prefix: GuestPrefix, name: string): string {
+export function formatGuestDisplayName(prefix: GuestPrefix, name: string, customPrefix = ""): string {
   const cleanName = name.trim().replace(/\s+/g, " ");
   if (!cleanName) return "";
 
   switch (prefix) {
     case "Dear":
+    case NO_PREFIX:
       return cleanName;
     case "Family":
       return `${cleanName} and Family`;
+    case CUSTOM_PREFIX: {
+      const custom = customPrefix.trim().replace(/\s+/g, " ").replace(/^dear\b\s*/i, "");
+      return custom ? `${custom} ${cleanName}` : cleanName;
+    }
     default:
       return `${prefix} ${cleanName}`;
   }
