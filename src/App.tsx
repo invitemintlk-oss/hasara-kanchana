@@ -5,6 +5,44 @@ import { INVITATION, getGuestNameFromUrl } from "./invitation";
 
 
 const MAX_GUESTS = 10;
+
+const RSVP_FONT: React.CSSProperties = { fontFamily: '"EB Garamond", Georgia, serif' };
+const RSVP_LABEL: React.CSSProperties = { ...RSVP_FONT, fontWeight: 600, color: "rgb(92, 20, 15)" };
+const RSVP_INPUT: React.CSSProperties = {
+  ...RSVP_FONT,
+  background: "rgb(251, 245, 230)",
+  border: "1px solid rgba(184, 154, 71, 0.45)",
+  borderRadius: 10,
+  color: "rgb(71, 60, 31)",
+};
+const RSVP_STEPPER: React.CSSProperties = {
+  background: "rgba(122, 31, 26, 0.1)",
+  color: "rgb(92, 20, 15)",
+  border: "1px solid rgba(122, 31, 26, 0.4)",
+};
+
+const COUNTRY_CODES = [
+  { flag: "🇱🇰", code: "+94" },
+  { flag: "🇮🇳", code: "+91" },
+  { flag: "🇲🇻", code: "+960" },
+  { flag: "🇦🇪", code: "+971" },
+  { flag: "🇶🇦", code: "+974" },
+  { flag: "🇸🇦", code: "+966" },
+  { flag: "🇰🇼", code: "+965" },
+  { flag: "🇴🇲", code: "+968" },
+  { flag: "🇧🇭", code: "+973" },
+  { flag: "🇬🇧", code: "+44" },
+  { flag: "🇮🇹", code: "+39" },
+  { flag: "🇩🇪", code: "+49" },
+  { flag: "🇫🇷", code: "+33" },
+  { flag: "🇺🇸", code: "+1" },
+  { flag: "🇦🇺", code: "+61" },
+  { flag: "🇳🇿", code: "+64" },
+  { flag: "🇯🇵", code: "+81" },
+  { flag: "🇰🇷", code: "+82" },
+  { flag: "🇸🇬", code: "+65" },
+  { flag: "🇲🇾", code: "+60" },
+];
 const backgroundMusic = "/handawaka_cut.mp3";
 const googleScriptUrl =
   "https://script.google.com/macros/s/AKfycbx6tVTRxM0Fjc10fR0a35PjSjb9JJN-9F7zDpxyJvVMhdZ3A-_rOkAV8x8Cwpeqfp5NLw/exec";
@@ -242,10 +280,15 @@ export default function WeddingInvitation() {
 
   const guestName = getGuestNameFromUrl();
 
-  const [rsvpForm, setRsvpForm] = useState({
+  const emptyRsvp = () => ({
     name: guestName,
-    guests: "1",
+    countryCode: "+94",
+    phone: "",
+    attendance: "" as "" | "yes" | "no",
+    guests: 1,
   });
+  const [rsvpForm, setRsvpForm] = useState(emptyRsvp);
+  const [rsvpError, setRsvpError] = useState("");
 
   const [rsvpStatus, setRsvpStatus] = useState<"idle" | "sending" | "success" | "error">("idle");
 
@@ -270,7 +313,17 @@ export default function WeddingInvitation() {
   const handleRsvpSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (!rsvpForm.name.trim()) {
+    const phoneDigits = rsvpForm.phone.replace(/\D/g, "").replace(/^0+/, "");
+    const problem = !rsvpForm.name.trim()
+      ? "Please enter your name."
+      : phoneDigits.length < 6
+        ? "Please enter a valid WhatsApp number."
+        : !rsvpForm.attendance
+          ? "Please let us know if you will be attending."
+          : "";
+
+    if (problem) {
+      setRsvpError(problem);
       setRsvpStatus("error");
       return;
     }
@@ -281,13 +334,16 @@ export default function WeddingInvitation() {
       await submitToGoogleSheet({
         action: "rsvp",
         name: rsvpForm.name.trim(),
-        guests: rsvpForm.guests,
+        whatsapp: `${rsvpForm.countryCode} ${phoneDigits}`,
+        attendance: rsvpForm.attendance === "yes" ? "Accepted" : "Declined",
+        guests: rsvpForm.attendance === "yes" ? String(rsvpForm.guests) : "0",
         dietaryNotes: "",
       });
 
       setRsvpStatus("success");
-      setRsvpForm({ name: guestName, guests: "1" });
+      setRsvpForm(emptyRsvp());
     } catch {
+      setRsvpError("Sorry, something went wrong. Please try again.");
       setRsvpStatus("error");
     }
   };
@@ -540,17 +596,33 @@ export default function WeddingInvitation() {
 
               <motion.div
                 initial={{ opacity: 0 }}
-                animate={{ opacity: 0.9 }}
+                animate={{ opacity: 1 }}
                 transition={{ delay: 1.1, duration: 1 }}
                 className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2"
               >
-                <div className="w-px h-14 bg-gradient-to-b from-[#2d5a27]/30 to-transparent rounded-full overflow-hidden">
-                  <motion.div
-                    animate={{ y: [-56, 56] }}
-                    transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
-                    className="w-full h-1/2 bg-[#3f7a39]/45"
-                  />
-                </div>
+                <button
+                  type="button"
+                  onClick={() => document.getElementById("details")?.scrollIntoView({ behavior: "smooth" })}
+                  className="group flex flex-col items-center gap-1.5 rounded-full border border-[#b89a47]/70 bg-[#fbf5e6]/90 backdrop-blur-md px-6 py-2.5 shadow-[0_8px_24px_-8px_rgba(92,20,15,0.35)] hover:bg-[#fbf5e6] transition-colors"
+                >
+                  <span className="intro-cinzel text-[13px] md:text-sm font-bold tracking-[0.35em] pl-[0.35em] text-[#5c140f] whitespace-nowrap">
+                    SCROLL DOWN
+                  </span>
+                </button>
+                <motion.svg
+                  animate={{ y: [0, 8, 0] }}
+                  transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+                  className="w-7 h-7 text-[#5c140f] drop-shadow-[0_0_6px_rgba(255,255,255,0.9)]"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.25"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <polyline points="6 9 12 15 18 9" />
+                </motion.svg>
               </motion.div>
             </section>
 
@@ -790,7 +862,7 @@ export default function WeddingInvitation() {
                   initial={{ opacity: 0, y: -20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
-                  className="text-2xl md:text-4xl text-slate-800 tracking-[0.3em] mb-8 md:mb-12 text-center"
+                  className="font-playball text-4xl md:text-6xl text-[#5c140f] tracking-[0.2em] mb-4 text-center"
                 >
                   RSVP
                 </motion.h2>
@@ -800,120 +872,192 @@ export default function WeddingInvitation() {
                   whileInView={{ opacity: 1, y: 0 }}
                   transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1] }}
                   viewport={{ once: true }}
-                  className="relative w-full max-w-[650px] bg-white p-6 md:p-10 shadow-[0_40px_100px_-25px_rgba(0,0,0,0.12)] flex flex-col items-center"
+                  className="relative w-full max-w-[560px] flex flex-col items-center"
                 >
-                  <div className="w-full rounded-[1.5rem] p-6 md:p-8 flex flex-col items-center">
-                    <h3 className="text-2xl md:text-4xl text-slate-800 mb-8 text-center">
-                      Will you join us?
-                    </h3>
+                  <p className="text-center mb-8 text-lg leading-relaxed max-w-md" style={{ ...RSVP_FONT, color: "rgb(124, 106, 72)" }}>
+                    Your presence would mean the world to us. Kindly let us know if you will be joining us.
+                  </p>
 
-                    <form className="w-full space-y-6 text-left" onSubmit={handleRsvpSubmit}>
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-slate-500 ml-1">Your Name</label>
+                  <form
+                    className="relative w-full rounded-[24px] px-6 py-9 text-left sm:px-12 sm:py-12"
+                    style={{
+                      background: "linear-gradient(rgba(251, 245, 230, 0.4) 0%, rgba(242, 230, 201, 0.4) 100%)",
+                      backdropFilter: "blur(12px)",
+                      WebkitBackdropFilter: "blur(12px)",
+                      border: "1px solid rgb(210, 185, 122)",
+                      boxShadow: "rgba(142, 116, 39, 0.5) 0px 30px 60px -40px",
+                    }}
+                    onSubmit={handleRsvpSubmit}
+                    noValidate
+                  >
+                    <span
+                      aria-hidden="true"
+                      className="pointer-events-none absolute"
+                      style={{ inset: 8, borderRadius: 17, border: "1px solid rgba(184, 154, 71, 0.45)" }}
+                    />
+
+                    <div className="relative mb-5 flex flex-col gap-1.5">
+                      <label htmlFor="rsvp-name" className="text-[0.9rem]" style={RSVP_LABEL}>Name</label>
+                      <input
+                        id="rsvp-name"
+                        type="text"
+                        autoComplete="name"
+                        placeholder="Your name"
+                        value={rsvpForm.name}
+                        onChange={(e) => {
+                          setRsvpStatus("idle");
+                          setRsvpForm((prev) => ({ ...prev, name: e.target.value }));
+                        }}
+                        className="w-full px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-[#b89a47]/30 placeholder:text-[#a8976f]"
+                        style={RSVP_INPUT}
+                        required
+                      />
+                    </div>
+
+                    <div className="relative mb-5 flex flex-col gap-1.5">
+                      <label htmlFor="rsvp-phone" className="text-[0.9rem]" style={RSVP_LABEL}>WhatsApp Number</label>
+                      <div className="flex gap-3">
+                        <div className="relative w-[36%] max-w-[140px] shrink-0">
+                          <select
+                            aria-label="Country code"
+                            value={rsvpForm.countryCode}
+                            onChange={(e) => {
+                              setRsvpStatus("idle");
+                              setRsvpForm((prev) => ({ ...prev, countryCode: e.target.value }));
+                            }}
+                            className="w-full appearance-none pl-3 pr-8 py-3 text-base cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#b89a47]/30"
+                            style={RSVP_INPUT}
+                          >
+                            {COUNTRY_CODES.map((c) => (
+                              <option key={`${c.flag}${c.code}`} value={c.code}>
+                                {c.flag} {c.code}
+                              </option>
+                            ))}
+                          </select>
+                          <svg className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "rgb(124, 106, 72)" }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="6 9 12 15 18 9" />
+                          </svg>
+                        </div>
                         <input
-                          type="text"
-                          placeholder="Enter your name..."
-                          value={rsvpForm.name}
+                          id="rsvp-phone"
+                          type="tel"
+                          inputMode="tel"
+                          autoComplete="tel-national"
+                          placeholder="77 123 4567"
+                          value={rsvpForm.phone}
                           onChange={(e) => {
                             setRsvpStatus("idle");
-                            setRsvpForm((prev) => ({ ...prev, name: e.target.value }));
+                            setRsvpForm((prev) => ({ ...prev, phone: e.target.value.replace(/[^\d\s-]/g, "") }));
                           }}
-                          className="w-full bg-white rounded-lg px-4 py-3 text-slate-800 placeholder:text-slate-300 focus:outline-none focus:ring-1 focus:ring-slate-400 transition-all text-base font-numeric"
+                          className="min-w-0 flex-1 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-[#b89a47]/30 placeholder:text-[#a8976f]"
+                          style={RSVP_INPUT}
                           required
                         />
                       </div>
+                    </div>
 
-                      <div className="space-y-4 pt-2">
-                        <label className="text-xs font-bold text-slate-500 ml-1">
-                          Will you attend our special day?
-                        </label>
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setRsvpStatus("idle");
-                            setRsvpForm((prev) => ({ ...prev, guests: prev.guests === "0" ? "1" : prev.guests }));
-                          }}
-                          aria-pressed={rsvpForm.guests !== "0"}
-                          className={`w-full py-5 md:py-6 rounded-xl text-sm md:text-base tracking-wide transition-all shadow-sm flex items-center justify-center px-4 leading-relaxed active:scale-[0.98] ${rsvpForm.guests !== "0" ? "bg-[#2d5a27] text-white hover:bg-[#1a5c4a]" : "bg-[#f3f3f3] hover:bg-slate-200 text-slate-700"}`}
-                        >
-                          Joyfully accept
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setRsvpStatus("idle");
-                            setRsvpForm((prev) => ({ ...prev, guests: "0" }));
-                          }}
-                          aria-pressed={rsvpForm.guests === "0"}
-                          className={`w-full py-5 md:py-6 rounded-xl text-sm md:text-base tracking-wide transition-all shadow-sm flex items-center justify-center px-4 leading-relaxed active:scale-[0.98] ${rsvpForm.guests === "0" ? "bg-[#2d5a27] text-white hover:bg-[#1a5c4a]" : "bg-[#f3f3f3] hover:bg-slate-200 text-slate-700"}`}
-                        >
-                          Regretfully decline, but sending my blessings
-                        </button>
+                    <div className="relative mb-5">
+                      <p className="mb-2.5 text-[0.9rem]" style={RSVP_LABEL}>Will you be attending?</p>
+                      <div className="flex gap-3" role="radiogroup" aria-label="Will you be attending?">
+                        {([
+                          { value: "yes", label: "Joyfully Accept" },
+                          { value: "no", label: "Regretfully Decline" },
+                        ] as const).map((opt) => {
+                          const selected = rsvpForm.attendance === opt.value;
+                          return (
+                            <button
+                              key={opt.value}
+                              type="button"
+                              role="radio"
+                              aria-checked={selected}
+                              onClick={() => {
+                                setRsvpStatus("idle");
+                                setRsvpForm((prev) => ({ ...prev, attendance: opt.value }));
+                              }}
+                              className="flex-1 px-3 py-3.5 text-center text-[0.95rem] transition-colors"
+                              style={{
+                                ...RSVP_FONT,
+                                fontWeight: 600,
+                                borderRadius: 10,
+                                border: selected ? "1px solid rgb(122, 31, 26)" : "1px solid rgba(184, 154, 71, 0.45)",
+                                background: selected ? "rgb(122, 31, 26)" : "transparent",
+                                color: selected ? "rgb(251, 245, 230)" : "rgb(124, 106, 72)",
+                              }}
+                            >
+                              {opt.label}
+                            </button>
+                          );
+                        })}
                       </div>
+                    </div>
 
-                      {rsvpForm.guests !== "0" && (
-                        <div className="space-y-2">
-                          <label className="text-xs font-bold text-slate-500 ml-1">Number of Guests</label>
-                          <div className="flex items-center justify-between rounded-xl bg-[#f3f3f3] px-3 py-3">
-                            <button
-                              type="button"
-                              aria-label="Fewer guests"
-                              disabled={Number(rsvpForm.guests) <= 1}
-                              onClick={() => {
-                                setRsvpStatus("idle");
-                                setRsvpForm((prev) => ({ ...prev, guests: String(Math.max(1, Number(prev.guests) - 1)) }));
-                              }}
-                              className="w-11 h-11 rounded-full bg-white text-[#2d5a27] text-2xl leading-none shadow-sm disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 transition"
-                            >
-                              −
-                            </button>
-                            <span className="text-base md:text-lg font-bold text-slate-700">
-                              {rsvpForm.guests} {rsvpForm.guests === "1" ? "Guest" : "Guests"}
-                            </span>
-                            <button
-                              type="button"
-                              aria-label="More guests"
-                              disabled={Number(rsvpForm.guests) >= MAX_GUESTS}
-                              onClick={() => {
-                                setRsvpStatus("idle");
-                                setRsvpForm((prev) => ({ ...prev, guests: String(Math.min(MAX_GUESTS, Number(prev.guests) + 1)) }));
-                              }}
-                              className="w-11 h-11 rounded-full bg-white text-[#2d5a27] text-2xl leading-none shadow-sm disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 transition"
-                            >
-                              +
-                            </button>
-                          </div>
+                    {rsvpForm.attendance !== "no" && (
+                      <div className="relative mb-6">
+                        <p className="mb-2.5 text-[0.9rem]" style={RSVP_LABEL}>Number of Guests</p>
+                        <div className="flex items-center justify-center gap-6">
+                          <button
+                            type="button"
+                            aria-label="Decrease guest count"
+                            disabled={rsvpForm.guests <= 1}
+                            onClick={() => {
+                              setRsvpStatus("idle");
+                              setRsvpForm((prev) => ({ ...prev, guests: Math.max(1, prev.guests - 1) }));
+                            }}
+                            className="grid h-11 w-11 place-items-center rounded-full text-xl transition-all hover:opacity-80 active:scale-90 disabled:cursor-not-allowed disabled:opacity-40"
+                            style={RSVP_STEPPER}
+                          >
+                            −
+                          </button>
+                          <span
+                            className="leading-none"
+                            aria-live="polite"
+                            style={{ fontFamily: '"Marcellus", Georgia, serif', color: "rgb(92, 20, 15)", fontSize: "2.4rem", minWidth: "3rem", textAlign: "center" }}
+                          >
+                            {rsvpForm.guests}
+                          </span>
+                          <button
+                            type="button"
+                            aria-label="Increase guest count"
+                            disabled={rsvpForm.guests >= MAX_GUESTS}
+                            onClick={() => {
+                              setRsvpStatus("idle");
+                              setRsvpForm((prev) => ({ ...prev, guests: Math.min(MAX_GUESTS, prev.guests + 1) }));
+                            }}
+                            className="grid h-11 w-11 place-items-center rounded-full text-xl transition-all hover:opacity-80 active:scale-90 disabled:cursor-not-allowed disabled:opacity-40"
+                            style={RSVP_STEPPER}
+                          >
+                            +
+                          </button>
                         </div>
-                      )}
-
-                      {(rsvpStatus === "success" || rsvpStatus === "error") && (
-                        <p
-                          className={`text-xs text-center font-semibold ${rsvpStatus === "success" ? "text-emerald-600" : "text-red-500"
-                            }`}
-                        >
-                          {rsvpStatus === "success"
-                            ? "Thank you! Your response has been sent."
-                            : "Please enter your name and try again."}
-                        </p>
-                      )}
-
-                      <div className="pt-6">
-                        <button
-                          type="submit"
-                          disabled={rsvpStatus === "sending"}
-                          className="w-full bg-[#2d5a27] text-white py-4 md:py-5 rounded-xl text-sm md:text-base tracking-[0.2em] font-bold hover:bg-[#1a5c4a] transition-all shadow-md disabled:opacity-70"
-                        >
-                          {rsvpStatus === "sending" ? "Sending..." : "Confirm"}
-                        </button>
-
-                        <p className="text-xs text-slate-400 mt-4 text-center leading-relaxed">
-                          Your response will be kept private.
-                        </p>
                       </div>
-                    </form>
-                  </div>
+                    )}
+
+                    {(rsvpStatus === "success" || rsvpStatus === "error") && (
+                      <p
+                        className="relative mb-4 text-center text-[0.95rem]"
+                        style={{ ...RSVP_FONT, fontWeight: 600, color: rsvpStatus === "success" ? "rgb(46, 104, 62)" : "rgb(160, 40, 30)" }}
+                      >
+                        {rsvpStatus === "success" ? "Thank you! Your response has been sent." : rsvpError}
+                      </p>
+                    )}
+
+                    <button
+                      type="submit"
+                      disabled={rsvpStatus === "sending"}
+                      className="relative inline-flex w-full items-center justify-center gap-2.5 rounded-full py-4 text-[0.8rem] uppercase tracking-[0.24em] transition-transform duration-200 hover:-translate-y-0.5 active:scale-95 disabled:opacity-60"
+                      style={{ ...RSVP_FONT, fontWeight: 700, background: "transparent", color: "rgb(92, 20, 15)", border: "1.5px solid rgb(122, 31, 26)" }}
+                    >
+                      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z" />
+                        <path d="m21.854 2.147-10.94 10.939" />
+                      </svg>
+                      {rsvpStatus === "sending" ? "Sending..." : "Send RSVP"}
+                    </button>
+
+                    <p className="relative mt-4 text-center text-sm" style={{ ...RSVP_FONT, color: "rgba(124, 106, 72, 0.75)" }}>
+                      Your response will be kept private.
+                    </p>
+                  </form>
                 </motion.div>
 
 
